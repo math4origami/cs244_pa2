@@ -368,9 +368,10 @@ def main():
     # Start N flows across the senders in a round-robin fashion
     # Hint: use getNodeByName to get a handle on the sender node
     # Hint: iperf command to start flow:
-    #       '%s -c 10.0.0.1 -p %s -t %d -i 1 -yc -Z %s > %s/%s &' % (
-    # CUSTOM_IPERF_PATH, 5001, seconds, args.cong, args.dir,
-    # output_file)
+    #       '%s -c 10.0.0.1 -p %s -t %d -i 1 -yc -Z %s > %s/iperf_server.txt &' % (
+    #           CUSTOM_IPERF_PATH, 5001, seconds, args.cong, args.dir)
+    # Note: The output file should be <args.dir>/iperf_server.txt. 
+    #       It will be used later in count_connections()
 
     # TODO: change the interface for which queue size is adjusted
     ret = do_sweep(iface='s0-eth1')

@@ -21,6 +21,7 @@ rootdir=buffersizing-$exptid
 plotpath=util
 iperf=~/iperf-patched/src/iperf
 
+# TODO: change the interface for which queue size is adjusted
 iface=s0-eth1
 
 for run in 1; do

@@ -19,7 +19,7 @@ exptid=`date +%b%d-%H:%M`
 
 rootdir=buffersizing-$exptid
 plotpath=util
-iperf=~/iperf-2.0.5/src/iperf
+iperf=~/iperf-patched/src/iperf
 
 iface=s0-eth1
 

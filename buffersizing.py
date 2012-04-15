@@ -154,6 +154,9 @@ def start_tcpprobe():
     Popen("cat /proc/net/tcpprobe > %s/tcp_probe.txt" %
           args.dir, shell=True)
 
+def stop_tcpprobe():
+    os.system("killall -9 cat; rmmod tcp_probe &>/dev/null;")
+
 def count_connections():
     "Count current connections in iperf output file"
     out = args.dir + "/iperf_server.txt"
@@ -386,6 +389,7 @@ def main():
 
     net.stop()
     Popen("killall -9 top bwm-ng tcpdump cat", shell=True).wait()
+    stop_tcpprobe()
     end = time()
     cprint("Sweep took %.3f seconds" % (end - start), "yellow")
 

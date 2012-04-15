@@ -378,7 +378,7 @@ def main():
 
     # TODO: change the interface for which queue size is adjusted
     ret = do_sweep(iface='s0-eth1')
-    total_flows = args.nflows
+    total_flows = (args.n - 1) * args.nflows
 
     # Store output
     output = "%d %s %.3f\n" % (total_flows, ret, ret * 1500.0)

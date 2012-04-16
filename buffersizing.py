@@ -142,11 +142,20 @@ class StarTopo(Topo):
                  delay=None, maxq=None):
         # Add default members to class.
         super(StarTopo, self ).__init__()
+        self.n = n
+        self.cpu = cpu
+        self.bw_host = bw_host
+        self.bw_net = bw_net
+        self.delay = delay
+        self.maxq = maxq
+        self.create_topology()
 
-        # TODO: Create the experiment topology 
-        # Set appropriate values for bandwidth, delay, 
-        # and queue size 
-
+    # TODO: Fill in the following function to  
+    # Create the experiment topology 
+    # Set appropriate values for bandwidth, delay, 
+    # and queue size 
+    def create_topology(self):
+        pass
 
 def start_tcpprobe():
     "Instal tcp_pobe module and dump to file"
@@ -336,11 +345,33 @@ def verify_bandwidth(net):
     "(Incomplete) verify link bandwidth"
     pass
 
+# TODO: Fill in the following function to 
+# Start iperf on the receiver node
+# Hint: use getNodeByName to get a handle on the sender node
+# Hint: iperf command to start the receiver:
+#       '%s -s -p %s > %s/iperf_server.txt &' %
+#        (CUSTOM_IPERF_PATH, 5001, args.dir)
+# Note: The output file should be <args.dir>/iperf_server.txt 
+#       It will be used later in count_connections()
+
+def start_receiver(net):
+    pass
+
+# TODO: Fill in the following function to 
+# Start N flows across the senders in a round-robin fashion
+# Hint: use getNodeByName to get a handle on the sender node
+# Hint: iperf command to start flow:
+#       '%s -c 10.0.0.1 -p %s -t %d -i 1 -yc -Z %s > %s/%s &' % (
+#           CUSTOM_IPERF_PATH, 5001, seconds, args.cong, args.dir, output_file)
+
+def start_senders(net):
+    # Seconds to run iperf; keep this very high
+    seconds = 3600
+    pass
+
 def main():
     "Create network and run Buffer Sizing experiment"
 
-    # Seconds to run iperf; keep this very high
-    seconds = 3600
     start = time()
     # Reset to known state
     topo = StarTopo(n=args.n, bw_host=args.bw_host,
@@ -356,25 +387,13 @@ def main():
     verify_latency(net)
     verify_bandwidth(net)
 
-    # TODO
-    # Start iperf on the receiver node
-    # Hint: use getNodeByName to get a handle on the sender node
-    # Hint: iperf command to start the receiver:
-    #       '%s -s -p %s > %s/iperf_server.txt &' %
-    #        (CUSTOM_IPERF_PATH, 5001, args.dir)
-    # Note: The output file should be <args.dir>/iperf_server.txt 
-    #       It will be used later in count_connections()
+    start_receiver()
 
     start_tcpprobe()
 
     cprint("Starting experiment", "green")
 
-    # TODO
-    # Start N flows across the senders in a round-robin fashion
-    # Hint: use getNodeByName to get a handle on the sender node
-    # Hint: iperf command to start flow:
-    #       '%s -c 10.0.0.1 -p %s -t %d -i 1 -yc -Z %s > %s/%s &' % (
-    #           CUSTOM_IPERF_PATH, 5001, seconds, args.cong, args.dir, output_file)
+    start_senders()
 
     # TODO: change the interface for which queue size is adjusted
     ret = do_sweep(iface='s0-eth1')

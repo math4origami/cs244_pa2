@@ -150,10 +150,10 @@ class StarTopo(Topo):
         self.maxq = maxq
         self.create_topology()
 
-    # TODO: Fill in the following function to  
-    # Create the experiment topology 
-    # Set appropriate values for bandwidth, delay, 
-    # and queue size 
+    # TODO: Fill in the following function to
+    # Create the experiment topology
+    # Set appropriate values for bandwidth, delay,
+    # and queue size
     def create_topology(self):
         pass
 
@@ -272,7 +272,7 @@ def do_sweep(iface):
     nflows = args.nflows * (args.n - 1)
     min_q, max_q = 1, int(bdp)
 
-    # Set a higher speed
+    # Set a higher speed so flows quickly connect
     set_speed(iface, "2Gbit")
 
     succeeded = 0
@@ -298,7 +298,7 @@ def do_sweep(iface):
     sys.stdout.flush()
     set_q(iface, max_q)
 
-    # Wait till link is 100% utilised and train 
+    # Wait till link is 100% utilised and train
     reference_rate = 0.0
     while reference_rate <= args.bw_net * START_BW_FRACTION:
         rates = get_rates(iface, nsamples=CALIBRATION_SAMPLES+CALIBRATION_SKIP)
@@ -319,8 +319,8 @@ def do_sweep(iface):
 
         # TODO: Binary search over queue sizes
         # (1) Check if a queue size of "mid" achieves required utilization
-        #     based on the median value of the measured rate samples. 
-        # (2) Change values of max_q and min_q accordingly 
+        #     based on the median value of the measured rate samples.
+        # (2) Change values of max_q and min_q accordingly
         #     to continue with the binary search
 
         # You may use the helper functions set_q(),
@@ -331,33 +331,33 @@ def do_sweep(iface):
     print "*** Minq for target: %d" % max_q
     return max_q
 
-# TODO: Fill in the following function to verify the latency 
+# TODO: Fill in the following function to verify the latency
 # settings of your topology
 
 def verify_latency(net):
     "(Incomplete) verify link latency"
     pass
 
-# TODO: Fill in the following function to verify the bandwidth 
+# TODO: Fill in the following function to verify the bandwidth
 # settings of your topology
 
 def verify_bandwidth(net):
     "(Incomplete) verify link bandwidth"
     pass
 
-# TODO: Fill in the following function to 
+# TODO: Fill in the following function to
 # Start iperf on the receiver node
 # Hint: use getNodeByName to get a handle on the sender node
 # Hint: iperf command to start the receiver:
 #       '%s -s -p %s > %s/iperf_server.txt &' %
 #        (CUSTOM_IPERF_PATH, 5001, args.dir)
-# Note: The output file should be <args.dir>/iperf_server.txt 
+# Note: The output file should be <args.dir>/iperf_server.txt
 #       It will be used later in count_connections()
 
 def start_receiver(net):
     pass
 
-# TODO: Fill in the following function to 
+# TODO: Fill in the following function to
 # Start N flows across the senders in a round-robin fashion
 # Hint: use getNodeByName to get a handle on the sender node
 # Hint: iperf command to start flow:
@@ -377,8 +377,7 @@ def main():
     topo = StarTopo(n=args.n, bw_host=args.bw_host,
                     delay='%sms' % args.delay,
                     bw_net=args.bw_net, maxq=args.maxq)
-    net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink,
-                  autoPinCpus=True)
+    net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
     dumpNodeConnections(net.hosts)
     net.pingAll()
@@ -407,7 +406,7 @@ def main():
     os.system('killall -9 ' + CUSTOM_IPERF_PATH)
 
     net.stop()
-    Popen("killall -9 top bwm-ng tcpdump cat", shell=True).wait()
+    Popen("killall -9 top bwm-ng tcpdump cat mnexec", shell=True).wait()
     stop_tcpprobe()
     end = time()
     cprint("Sweep took %.3f seconds" % (end - start), "yellow")

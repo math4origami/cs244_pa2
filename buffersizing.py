@@ -9,6 +9,7 @@ from mininet.net import Mininet
 from mininet.log import lg
 from mininet.util import dumpNodeConnections
 
+import subprocess
 from subprocess import Popen, PIPE
 from time import sleep, time
 from multiprocessing import Process
@@ -150,16 +151,15 @@ class StarTopo(Topo):
         self.maxq = maxq
         self.create_topology()
 
-    # TODO: Fill in the following function to
-    # Create the experiment topology
-    # Set appropriate values for bandwidth, delay,
-    # and queue size
+    # TODO: Fill in the following function to Create the experiment
+    # topology Set appropriate values for bandwidth, delay, and queue
+    # size.
     def create_topology(self):
         pass
 
 def start_tcpprobe():
-    "Instal tcp_pobe module and dump to file"
-    os.system("rmmod tcp_probe; modprobe tcp_probe;")
+    "Install tcp_probe module and dump to file"
+    os.system("rmmod tcp_probe 2>/dev/null; modprobe tcp_probe;")
     Popen("cat /proc/net/tcpprobe > %s/tcp_probe.txt" %
           args.dir, shell=True)
 
@@ -177,7 +177,8 @@ def set_q(iface, q):
     "Change queue size limit of interface"
     cmd = ("tc qdisc change dev %s parent 1:1 "
            "handle 10: netem limit %s" % (iface, q))
-    os.system(cmd)
+    #os.system(cmd)
+    subprocess.check_output(cmd, shell=True)
 
 def set_speed(iface, spd):
     "Change htb maximum rate for interface"
@@ -203,7 +204,10 @@ def get_txbytes(iface):
 
 def get_rates(iface, nsamples=NSAMPLES, period=SAMPLE_PERIOD_SEC,
               wait=SAMPLE_WAIT_SEC):
-    """Returns rate in Mbps"""
+    """Returns the interface @iface's current utilization in Mb/s.  It
+    returns @nsamples samples, and each sample is the average
+    utilization measured over @period time.  Before measuring it waits
+    for @wait seconds to 'warm up'."""
     # Returning nsamples requires one extra to start the timer.
     nsamples += 1
     last_time = 0
@@ -272,7 +276,8 @@ def do_sweep(iface):
     nflows = args.nflows * (args.n - 1)
     min_q, max_q = 1, int(bdp)
 
-    # Set a higher speed so flows quickly connect
+    # Set a higher speed on the bottleneck link in the beginning so
+    # flows quickly connect
     set_speed(iface, "2Gbit")
 
     succeeded = 0
@@ -280,7 +285,7 @@ def do_sweep(iface):
     while wait_time > 0 and succeeded != nflows:
         wait_time -= 1
         succeeded = count_connections()
-        print 'Connections %d/%d  \r' % (succeeded, nflows),
+        print 'Connections %d/%d succeeded\r' % (succeeded, nflows),
         sys.stdout.flush()
         sleep(1)
 
@@ -293,6 +298,7 @@ def do_sweep(iface):
         print 'Giving up'
         return -1
 
+    # TODO: Set the speed back to the bottleneck link speed.
     set_speed(iface, "%.2fMbit" % args.bw_net)
     print "\nSetting q=%d " % max_q,
     sys.stdout.flush()
@@ -317,7 +323,7 @@ def do_sweep(iface):
         print "Trying q=%d  [%d,%d] " % (mid, min_q, max_q),
         sys.stdout.flush()
 
-        # TODO: Binary search over queue sizes
+        # TODO: Binary search over queue sizes.
         # (1) Check if a queue size of "mid" achieves required utilization
         #     based on the median value of the measured rate samples.
         # (2) Change values of max_q and min_q accordingly
@@ -326,6 +332,8 @@ def do_sweep(iface):
         # You may use the helper functions set_q(),
         # get_rates(), avg(), median() and ok()
 
+        # Note: this do_sweep function does a bunch of setup, so do
+        # not recursively call do_sweep to do binary search.
 
     monitor.terminate()
     print "*** Minq for target: %d" % max_q
@@ -349,7 +357,7 @@ def verify_bandwidth(net):
 # Start iperf on the receiver node
 # Hint: use getNodeByName to get a handle on the sender node
 # Hint: iperf command to start the receiver:
-#       '%s -s -p %s > %s/iperf_server.txt &' %
+#       '%s -s -p %s > %s/iperf_server.txt' %
 #        (CUSTOM_IPERF_PATH, 5001, args.dir)
 # Note: The output file should be <args.dir>/iperf_server.txt
 #       It will be used later in count_connections()
@@ -358,11 +366,16 @@ def start_receiver(net):
     pass
 
 # TODO: Fill in the following function to
-# Start N flows across the senders in a round-robin fashion
-# Hint: use getNodeByName to get a handle on the sender node
+# Start args.nflows flows across the senders in a round-robin fashion
+# Hint: use getNodeByName to get a handle on the sender (A or B in the
+# figure) and receiver node (C in the figure).
 # Hint: iperf command to start flow:
-#       '%s -c 10.0.0.1 -p %s -t %d -i 1 -yc -Z %s > %s/%s &' % (
-#           CUSTOM_IPERF_PATH, 5001, seconds, args.cong, args.dir, output_file)
+#       '%s -c %s -p %s -t %d -i 1 -yc -Z %s > %s/%s' % (
+#           CUSTOM_IPERF_PATH, server.IP(), 5001, seconds, args.cong, args.dir, output_file)
+# It is a good practice to store output files in a place specific to the
+# experiment, where you can easily access, e.g., under args.dir.
+# It will be very handy when debugging.  You are not required to
+# submit these in your final submission.
 
 def start_senders(net):
     # Seconds to run iperf; keep this very high
@@ -382,23 +395,25 @@ def main():
     dumpNodeConnections(net.hosts)
     net.pingAll()
 
-    # verify latency and bandwidth of the setup
+    # TODO: verify latency and bandwidth of links in the topology you
+    # just created.
     verify_latency(net)
     verify_bandwidth(net)
 
-    start_receiver()
+    start_receiver(net)
 
     start_tcpprobe()
 
     cprint("Starting experiment", "green")
 
-    start_senders()
+    start_senders(net)
 
     # TODO: change the interface for which queue size is adjusted
     ret = do_sweep(iface='s0-eth1')
     total_flows = (args.n - 1) * args.nflows
 
-    # Store output
+    # Store output.  It will be parsed by run.sh after the entire
+    # sweep is completed.  Do not change this filename!
     output = "%d %s %.3f\n" % (total_flows, ret, ret * 1500.0)
     open("%s/result.txt" % args.dir, "w").write(output)
 
@@ -412,4 +427,13 @@ def main():
     cprint("Sweep took %.3f seconds" % (end - start), "yellow")
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except:
+        print "-"*80
+        print "Caught exception.  Cleaning up..."
+        print "-"*80
+        import traceback
+        traceback.print_exc()
+        os.system("killall -9 top bwm-ng tcpdump cat mnexec iperf; mn -c")
+

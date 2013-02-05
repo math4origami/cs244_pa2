@@ -21,6 +21,7 @@ import os
 from util.monitor import monitor_qlen
 from util.helper import stdev
 
+import string
 
 # Number of samples to skip for reference util calibration.
 CALIBRATION_SKIP = 10
@@ -155,7 +156,17 @@ class StarTopo(Topo):
     # topology Set appropriate values for bandwidth, delay, and queue
     # size.
     def create_topology(self):
-        pass
+        switch0 = self.addSwitch('s0')
+        host0 = self.addHost('h0')
+        self.addLink(host0, switch0,
+                     bw=self.bw_net, delay=self.delay, max_queue_size=self.maxq)
+
+        for i in range(1,self.n):
+            hosti = self.addHost("h%d" % i)
+            self.addLink(hosti, switch0,
+                         bw=self.bw_host, delay=self.delay)
+
+        return
 
 def start_tcpprobe():
     "Install tcp_probe module and dump to file"
@@ -343,8 +354,16 @@ def do_sweep(iface):
 # settings of your topology
 
 def verify_latency(net):
-    "(Incomplete) verify link latency"
-    pass
+    h0 = net.getNodeByName('h0');
+    
+    for i in range(1,args.n):
+        hi = net.getNodeByName('h%d' % i)
+        result = h0.cmd('ping -c 1 %s' % (hi.IP()))
+        time_i = string.find(result, 'time=')
+        line_i = string.find(result, '\n', time_i)
+        print "h%d %s" % (i, result[time_i:line_i])
+        
+    return
 
 # TODO: Fill in the following function to verify the bandwidth
 # settings of your topology
@@ -388,7 +407,7 @@ def main():
     start = time()
     # Reset to known state
     topo = StarTopo(n=args.n, bw_host=args.bw_host,
-                    delay='%sms' % args.delay,
+                    delay='%sms' % (args.delay/2),
                     bw_net=args.bw_net, maxq=args.maxq)
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()

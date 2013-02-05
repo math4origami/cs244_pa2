@@ -378,7 +378,7 @@ def verify_bandwidth(net):
 
     for i in range(1,2): #there is only one bottleneck flow, so I just test that
         hi = net.getNodeByName('h%d' % i)
-        hi.popen("iperf -t %d -c %s" % (vbw_time,h0.IP()), shell=True)
+        hi.popen("iperf -t %d -c %s" % (vbw_time,h0.IP()))
         hi.popen("ethstats -n 1 > %s" % vbw_file, shell=True)
         for j in range (vbw_time):
             sleep(1)
@@ -404,7 +404,7 @@ def verify_bandwidth(net):
 
 def start_receiver(net):
     h0 = net.getNodeByName('h0')
-    h0.popen('%s -s -p %s > %s/iperf_server.txt' % (CUSTOM_IPERF_PATH, 5001, args.dir))
+    h0.popen('%s -s -p %s > %s/iperf_server.txt' % (CUSTOM_IPERF_PATH, 5001, args.dir), shell=True)
     return
 
 # TODO: Fill in the following function to
@@ -427,7 +427,7 @@ def start_senders(net):
         for j in range(1,args.n):
             hj = net.getNodeByName('h%d' % j)
             hj.popen('%s -c %s -p %s -t %d -i 1 -yc -Z %s > %s/h%s_f%d_iperf.txt' % 
-                     (CUSTOM_IPERF_PATH, h0.IP(), 5001, seconds, args.cong, args.dir, j, i))
+                     (CUSTOM_IPERF_PATH, h0.IP(), 5001, seconds, args.cong, args.dir, j, i), shell=True)
     return
 
 def main():

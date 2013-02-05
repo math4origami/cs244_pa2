@@ -354,7 +354,8 @@ def do_sweep(iface):
 # settings of your topology
 
 def verify_latency(net):
-    h0 = net.getNodeByName('h0');
+    print "*** Verifying latency"
+    h0 = net.getNodeByName('h0')
     
     for i in range(1,args.n):
         hi = net.getNodeByName('h%d' % i)
@@ -369,8 +370,28 @@ def verify_latency(net):
 # settings of your topology
 
 def verify_bandwidth(net):
-    "(Incomplete) verify link bandwidth"
-    pass
+    print "*** Verifying bandwidth"
+    h0 = net.getNodeByName('h0')
+    h0.popen("iperf -s -w 16m")
+    vbw_file = "verify_bandwidth.txt"
+    vbw_time = 10
+
+    for i in range(1,2): #there is only one bottleneck flow, so I just test that
+        hi = net.getNodeByName('h%d' % i)
+        hi.popen("iperf -t %d -c %s" % (vbw_time,h0.IP()), shell=True)
+        hi.popen("ethstats -n 1 > %s" % vbw_file, shell=True)
+        for j in range (vbw_time):
+            sleep(1)
+            print '%d ' % j
+        hi.popen("kill %ethstats")
+        hi.popen("kill %iperf")
+        f = open(vbw_file)
+        for line in f.readlines():
+            print line
+        f.close()
+
+
+    return
 
 # TODO: Fill in the following function to
 # Start iperf on the receiver node
@@ -382,7 +403,9 @@ def verify_bandwidth(net):
 #       It will be used later in count_connections()
 
 def start_receiver(net):
-    pass
+    h0 = net.getNodeByName('h0')
+    h0.popen('%s -s -p %s > %s/iperf_server.txt' % (CUSTOM_IPERF_PATH, 5001, args.dir))
+    return
 
 # TODO: Fill in the following function to
 # Start args.nflows flows across the senders in a round-robin fashion
@@ -399,7 +422,13 @@ def start_receiver(net):
 def start_senders(net):
     # Seconds to run iperf; keep this very high
     seconds = 3600
-    pass
+    h0 = net.getNodeByName('h0')
+    for i in range(args.nflows):
+        for j in range(1,args.n):
+            hj = net.getNodeByName('h%d' % j)
+            hj.popen('%s -c %s -p %s -t %d -i 1 -yc -Z %s > %s/h%s_f%d_iperf.txt' % 
+                     (CUSTOM_IPERF_PATH, h0.IP(), 5001, seconds, args.cong, args.dir, j, i))
+    return
 
 def main():
     "Create network and run Buffer Sizing experiment"

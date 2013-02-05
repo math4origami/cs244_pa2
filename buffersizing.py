@@ -158,8 +158,8 @@ class StarTopo(Topo):
     def create_topology(self):
         switch0 = self.addSwitch('s0')
         host0 = self.addHost('h0')
-        self.addLink(host0, switch0,
-                     bw=self.bw_net, delay=self.delay, max_queue_size=self.maxq)
+        link = self.addLink(host0, switch0,
+                            bw=self.bw_net, delay=self.delay, max_queue_size=self.maxq)
 
         for i in range(1,self.n):
             hosti = self.addHost("h%d" % i)
@@ -331,9 +331,17 @@ def do_sweep(iface):
 
     while abs(min_q - max_q) >= 2:
         mid = (min_q + max_q) / 2
-        print "Trying q=%d  [%d,%d] " % (mid, min_q, max_q),
+        print "Trying q=%d  [%d,%d] " % (mid, min_q, max_q)
         sys.stdout.flush()
-
+        
+        set_q(iface, mid)
+        rates = get_rates(iface)
+        rate = median(rates)
+        print (rate/reference_rate)
+        if (ok(rate/reference_rate)):
+            max_q = mid-1
+        else:
+            min_q = mid+1
         # TODO: Binary search over queue sizes.
         # (1) Check if a queue size of "mid" achieves required utilization
         #     based on the median value of the measured rate samples.
@@ -383,8 +391,7 @@ def verify_bandwidth(net):
         for j in range (vbw_time):
             sleep(1)
             print '%d ' % j
-        hi.popen("kill %ethstats")
-        hi.popen("kill %iperf")
+        os.system("killall -9 ethstats iperf")
         f = open(vbw_file)
         for line in f.readlines():
             print line
@@ -404,7 +411,7 @@ def verify_bandwidth(net):
 
 def start_receiver(net):
     h0 = net.getNodeByName('h0')
-    h0.popen('%s -s -p %s > %s/iperf_server.txt' % (CUSTOM_IPERF_PATH, 5001, args.dir), shell=True)
+    h0.popen('%s -s > %s/iperf_server.txt' % (CUSTOM_IPERF_PATH, args.dir), shell=True)
     return
 
 # TODO: Fill in the following function to
@@ -426,8 +433,8 @@ def start_senders(net):
     for i in range(args.nflows):
         for j in range(1,args.n):
             hj = net.getNodeByName('h%d' % j)
-            hj.popen('%s -c %s -p %s -t %d -i 1 -yc -Z %s > %s/h%s_f%d_iperf.txt' % 
-                     (CUSTOM_IPERF_PATH, h0.IP(), 5001, seconds, args.cong, args.dir, j, i), shell=True)
+            hj.popen('%s -c %s -t %d -i 1 -yc -Z %s > %s/h%s_f%d_iperf.txt' % 
+                     (CUSTOM_IPERF_PATH, h0.IP(), seconds, args.cong, args.dir, j, i), shell=True)
     return
 
 def main():

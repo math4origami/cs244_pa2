@@ -452,8 +452,8 @@ def main():
 
     # TODO: verify latency and bandwidth of links in the topology you
     # just created.
-    verify_latency(net)
-    verify_bandwidth(net)
+    # verify_latency(net)
+    # verify_bandwidth(net)
 
     start_receiver(net)
 

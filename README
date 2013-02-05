@@ -1,5 +1,26 @@
 Instructions to run the assignment:
-
+Run run.sh
 
 Answers to quiz questions:
+1.
+Mininet uses software to execute control and forwarding logic, whereas in hardware there are specially designed chips to run the logic.  This means that Mininet is much more flexible, but slower.
 
+Mininet all runs on one box, but the real network is on separate boxes.  This means that all the Mininet logic can be run all on one processor, so if any of the nodes has a highly intensive processing step it can affect the others.
+
+2.
+It should take very little time since TCP shrinks the window by half whenever it drops a packet.  
+
+3.
+Once there are a few flows to fill the bandwidth, it fills up the buffers and then they will start to drop packets.  This dropping of packets can greatly slow down the TCP handshake.  
+
+4.
+TCP will decrease the window by half when there is a dropped packet, so the buffer helps smooth out the window from when packets drop at the bottleneck.  
+With one flow you will need RTT x rate = 87ms * 62.5 Mb/s = 5mb
+
+5.
+As the number of flows increase, the cwnd per flow gets smaller and the min req buffer size decreases.  
+This is because more flows mean there is more input at the same time, and therefore for eace flow the window isn't very big, and the buffer doesn't need to be as big either.
+
+6.
+Mininet runs all on one system, so there could be conflicts of resources.  
+If we were to do further resaerch, we should try to create isolated nodes.
